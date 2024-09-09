@@ -9,7 +9,7 @@
 
 * Прочитайте первые две главы "Low-level programming: C, assembly and program execution".
 
-* Ознакомьтесь с [документацией на следующие инструкции](https://gitlab.se.ifmo.ru/programming-languages/cse-programming-languages-fall-2024/main/-/blob/main/docs/intel-manual.pdf) и [Документацией по Linux ABI](https://gitlab.se.ifmo.ru/programming-languages/cse-programming-languages-fall-2024/main/-/blob/main/docs/x86_64-abi-0.99.pdf).
+* Ознакомьтесь с [документацией на следующие инструкции](https://gitlab.se.ifmo.ru/programming-languages/cse-programming-languages-fall-2024/main/-/blob/master/docs/intel-manual.pdf) и [Документацией по Linux ABI](https://gitlab.se.ifmo.ru/programming-languages/cse-programming-languages-fall-2024/main/-/blob/master/docs/x86_64-abi-0.99.pdf).
 
   - `xor`
   - `jmp`, `ja` и другими командами условного перехода
