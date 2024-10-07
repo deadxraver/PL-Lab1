@@ -1,61 +1,60 @@
+%define EXIT_CALL   60
+%define WRITE_CALL  1
+%define STDOUT      1
+%define READ_CALL   0
+%define STDIN       1
+
 section .text
-
-
+ 
+ 
 ; Принимает код возврата и завершает текущий процесс
-exit:
-  xor rax, rax
-  mov rax, 60
+exit: 
+  mov rax, EXIT_CALL
   syscall
 
 ; Принимает указатель на нуль-терминированную строку, возвращает её длину
 string_length:
-        mov     r10, rdi
-        xor     rax, rax
-        .loop:
-        cmp     byte [r10], 0
-        je      .end
-        inc     r10
-        inc     rax
-        jmp     .loop
-        .end:
-        ret
+	mov	r10, rdi
+	xor	rax, rax
+	.loop:
+	cmp	byte [r10], 0
+	je	.end
+	inc	r10
+	inc	rax
+	jmp	.loop
+	.end:
+	ret
 
 ; Принимает указатель на нуль-терминированную строку, выводит её в stdout
 print_string:
-        xor       rax, rax      ; rax = stdout
   push rdi            ; save rdi before calling another function
-        call string_length  ; get length of string to be printed
+	call string_length  ; get length of string to be printed
   mov rdx, rax        ; pass length to rdx
   pop rdi             ; get rdi back form stack
   mov rsi, rdi        ; rsi = pointer to the start of string
-  mov rax, 1          ; stdout
-  mov rdi, 1
+  mov rax, WRITE_CALL
+  mov rdi, STDOUT
   syscall
-        ret
+	ret
 
 ; Принимает код символа и выводит его в stdout
 print_char:
-        xor     rax, rax
   sub rsp, 8
-  mov [rsp], rdi
-        mov     rax, 1
-        mov     rsi, rsp
-        mov     rdi, 1
-        mov     rdx, 1
-        syscall
+  mov [rsp], rdi 
+	mov	rax, WRITE_CALL
+	mov	rsi, rsp
+	mov	rdi, STDOUT
+	mov	rdx, 1  ; length of 1 char = 1
+	syscall
   add rsp, 8
-        ret
+	ret
 
 ; Переводит строку (выводит символ с кодом 0xA)
 print_newline:
-  xor rax, rax
-  mov rdi, 1
-  mov rsi, 10 ; `\n` = 0
-  mov rdx, 1
-  syscall
-  ret
+  mov rdi, `\n` ; `\n` = 0
+  jmp print_char
 
-; Выводит беззнаковое 8-байтовое число в десятичном формате
+; Выводит беззнаковое 8-байтовое число в десятичном формате 
 ; Совет: выделите место в стеке и храните там результаты деления
 ; Не забудьте перевести цифры в их ASCII коды.
 print_uint:
@@ -77,7 +76,7 @@ print_uint:
   add   rsp, 24
   ret
 
-; Выводит знаковое 8-байтовое число в десятичном формате
+; Выводит знаковое 8-байтовое число в десятичном формате 
 print_int:
   test  rdi, rdi
   jns   print_uint
@@ -86,10 +85,7 @@ print_int:
   mov   rdi, '-'
   call  print_char
   pop   rdi
-  sub   rsp, 8
-  call  print_uint
-  add   rsp, 8
-  ret
+  jmp   print_uint
 
 ; Принимает два указателя на нуль-терминированные строки, возвращает 1 если они равны, 0 иначе
 string_equals:
@@ -110,11 +106,10 @@ string_equals:
 
 ; Читает один символ из stdin и возвращает его. Возвращает 0 если достигнут конец потока
 read_char:
-  xor rax, rax
+  mov rax, READ_CALL
   push rax
-  xor rdi, rdi
- ; xor edi, edi
-  mov rdx, 1
+  mov rdi, STDIN
+  mov rdx, 1  ; 1 char
   mov rsi, rsp
   syscall
   pop rax
@@ -138,11 +133,11 @@ read_word: ; rdi - buffer_p, rsi - buffer_size
   xor   r14, r14 ; word_size
   .loop:
   call  read_char
-  cmp   al, 0x20
+  cmp   al, `\t`
   je    .handle_whitespace
-  cmp   al, 10
+  cmp   al, `\n`
   je    .handle_whitespace
-  cmp   al, 9
+  cmp   al, ` `
   je    .handle_whitespace
   test  al, al
   jz    .no_error
@@ -161,11 +156,13 @@ read_word: ; rdi - buffer_p, rsi - buffer_size
   xor   rdx, rdx
   jmp   .end
   .no_error:
+  inc   r14
+  cmp   r14, r12
+  jg    .error
+  dec   r14
   mov   rax, rbx
   mov   rdx, r14
-  cmp   rdx, r12
-  jg    .error
-  mov   byte [rbx + r14], 0
+  mov   byte [rbx + r14], 0 ; null-terminator
   .end:
   pop   r14
   pop   r12
@@ -186,12 +183,11 @@ parse_uint:
   mov   r11b, byte [rdi + r8]
   test  r11b, r11b
   jz    .no_error
-  cmp   r11b, '0'
+  sub   r11b, '0'
   jb    .no_error
-  cmp   r11b, '9'
+  cmp   r11b, 9
   jg    .no_error
   mul   r10
-  sub   r11, '0'
   add   rax, r11
   inc   r8
   jmp   .loop
@@ -206,18 +202,27 @@ parse_uint:
 ; Принимает указатель на строку, пытается
 ; прочитать из её начала знаковое число.
 ; Если есть знак, пробелы между ним и числом не разрешены.
-; Возвращает в rax: число, rdx : его длину в символах (включая знак, если он был)
+; Возвращает в rax: число, rdx : его длину в символах (включая знак, если он был) 
 ; rdx = 0 если число прочитать не удалось
 parse_int:
   cmp   byte [rdi], '-'
   jne   parse_uint
   inc   rdi
+  cmp   byte [rdi], '0'
+  jbe   .error
+  cmp   byte [rdi], '9'
+  jg    .error
   sub   rsp, 8
   call  parse_uint
   add   rsp, 8
   neg   rax
   inc   rdx
+  .end:
   ret
+  .error:
+  xor   rdx, rdx
+  ret
+
 
 ; Принимает указатель на строку, указатель на буфер и длину буфера
 ; Копирует строку в буфер
