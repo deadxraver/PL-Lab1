@@ -2,7 +2,7 @@
 %define WRITE_CALL  1
 %define STDOUT      1
 %define READ_CALL   0
-%define STDIN       1
+%define STDIN       0
 
 section .text
  
@@ -54,9 +54,17 @@ print_newline:
   mov rdi, `\n` ; `\n` = 0
   jmp print_char
 
-; Выводит беззнаковое 8-байтовое число в десятичном формате 
-; Совет: выделите место в стеке и храните там результаты деления
-; Не забудьте перевести цифры в их ASCII коды.
+
+; Выводит знаковое 8-байтовое число в десятичном формате 
+print_int:
+  test  rdi, rdi
+  jns   print_uint
+  neg   rdi
+  push  rdi
+  mov   rdi, '-'
+  call  print_char
+  pop   rdi
+
 print_uint:
   mov   rax, rdi
   mov   r10, 10
@@ -75,18 +83,6 @@ print_uint:
   call  print_string
   add   rsp, 24
   ret
-
-; Выводит знаковое 8-байтовое число в десятичном формате 
-print_int:
-  test  rdi, rdi
-  jns   print_uint
-  neg   rdi
-  push  rdi
-  mov   rdi, '-'
-  call  print_char
-  pop   rdi
-  jmp   print_uint
-
 ; Принимает два указателя на нуль-терминированные строки, возвращает 1 если они равны, 0 иначе
 string_equals:
   xor   rax, rax
@@ -221,6 +217,7 @@ parse_int:
   ret
   .error:
   xor   rdx, rdx
+  xor   rax, rax
   ret
 
 
