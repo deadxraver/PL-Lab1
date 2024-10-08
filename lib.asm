@@ -16,7 +16,7 @@ exit:
 string_length:
 	xor	rax, rax
 	.loop:
-	cmp	byte [r10 + rax], 0
+	cmp	byte [rdi + rax], 0
 	je	.end
 	inc	rax
 	jmp	.loop
