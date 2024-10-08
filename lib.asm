@@ -14,12 +14,10 @@ exit:
 
 ; Принимает указатель на нуль-терминированную строку, возвращает её длину
 string_length:
-	mov	r10, rdi
 	xor	rax, rax
 	.loop:
-	cmp	byte [r10], 0
+	cmp	byte [r10 + rax], 0
 	je	.end
-	inc	r10
 	inc	rax
 	jmp	.loop
 	.end:
