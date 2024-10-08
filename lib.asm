@@ -204,13 +204,11 @@ parse_int:
   cmp   byte [rdi], '-'
   jne   parse_uint
   inc   rdi
-  cmp   byte [rdi], '0'
-  jbe   .error
-  cmp   byte [rdi], '9'
-  jg    .error
   sub   rsp, 8
   call  parse_uint
   add   rsp, 8
+  test  rdx, rdx
+  jz    .error
   neg   rax
   inc   rdx
   .end:
